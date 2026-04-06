@@ -1,226 +1,169 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-// --- YOUR DATA SECTION ---
+// 1. DATA SECTION
 const soldiers = [
-  {
-    name: "Thetechnopig",
-    role: "SIEGE BREAKER",
-    medals: [{label: 'DEMOLISHER', cls: 'combat'}, {label: 'QUARTERMASTER', cls: 'logi'}, {label: 'FRONT-LINE BUILDER', cls: 'support'}],
-    enemyPlayerDmg: 129816, friendlyPlayerDmg: 9874,
-    enemyStructDmg: 769543, friendlyStructDmg: 45117,
-    construction: 125030, repairing: 21880,
-    healing: 1942, revivals: 20,
-    vehiclesCaptured: 7,
+{
+    name: "Thetechnopig", role: "SIEGE BREAKER",
+    medals: [{label: 'DEMOLISHER', cls: 'combat'}, {label: 'QUARTERMASTER', cls: 'logi'}],
+    enemyPlayerDmg: 129816, friendlyPlayerDmg: 9874, enemyStructDmg: 769543, friendlyStructDmg: 45117,
+    construction: 125030, repairing: 21880, healing: 1942, revivals: 20, vehiclesCaptured: 7,
     selfDmgNeutral: 0, selfDmgColonial: 0, selfDmgWarden: 873,
-    materialsSubmitted: 400645, materialsGathered: 24352,
-    supplyDelivered: 478829
+    materialsSubmitted: 400645, materialsGathered: 24352, supplyDelivered: 478829
   },
   {
-    name: "Providence",
-    role: "ELITE COMBAT MEDIC",
-    medals: [{label: 'LIFE SAVER', cls: 'medic'}, {label: 'RESCUE OPS', cls: 'medic'}, {label: 'SUPPLY CHAIN', cls: 'logi'}],
-    enemyPlayerDmg: 22074, friendlyPlayerDmg: 9090,
-    enemyStructDmg: 246781, friendlyStructDmg: 18087,
-    construction: 7053, repairing: 12940,
-    healing: 59959, revivals: 302,
-    vehiclesCaptured: 13,
+    name: "Providence", role: "ELITE COMBAT MEDIC",
+    medals: [{label: 'LIFE SAVER', cls: 'medic'}, {label: 'RESCUE OPS', cls: 'medic'}],
+    enemyPlayerDmg: 22074, friendlyPlayerDmg: 9090, enemyStructDmg: 246781, friendlyStructDmg: 18087,
+    construction: 7053, repairing: 12940, healing: 59959, revivals: 302, vehiclesCaptured: 13,
     selfDmgNeutral: 684, selfDmgColonial: 0, selfDmgWarden: 1159,
-    materialsSubmitted: 5000, materialsGathered: 6032,
-    supplyDelivered: 221104
+    materialsSubmitted: 5000, materialsGathered: 6032, supplyDelivered: 221104
   },
   {
-    name: "Kathira",
-    role: "LOGISTICS ARCHITECT",
-    medals: [{label: 'SUPPLY TITAN', cls: 'logi'}, {label: 'RESOURCES MOGUL', cls: 'logi'}, {label: 'FRONT-LINE BUILDER', cls: 'support'}],
-    enemyPlayerDmg: 23308, friendlyPlayerDmg: 2142,
-    enemyStructDmg: 71361, friendlyStructDmg: 4244,
-    construction: 25438, repairing: 3762,
-    healing: 8265, revivals: 54,
-    vehiclesCaptured: 1,
+    name: "Kathira", role: "LOGISTICS ARCHITECT",
+    medals: [{label: 'SUPPLY TITAN', cls: 'logi'}, {label: 'RESOURCES MOGUL', cls: 'logi'}],
+    enemyPlayerDmg: 23308, friendlyPlayerDmg: 2142, enemyStructDmg: 71361, friendlyStructDmg: 4244,
+    construction: 25438, repairing: 3762, healing: 8265, revivals: 54, vehiclesCaptured: 1,
     selfDmgNeutral: 1125, selfDmgColonial: 434, selfDmgWarden: 138,
-    materialsSubmitted: 996934, materialsGathered: 587699,
-    supplyDelivered: 2050136
+    materialsSubmitted: 996934, materialsGathered: 587699, supplyDelivered: 2050136
   }
 ];
 
-// --- SETTINGS & HELPERS ---
+// 2. CONFIGURATION
 const radarColors = ['#c8a84b', '#e05050', '#50c0e0', '#a070e0', '#2ecc71', '#f1c40f', '#e67e22', '#3498db', '#9b59b6', '#1abc9c'];
 
 const categories = [
   { label: 'Combat', fields: [
     { key: 'enemyPlayerDmg', label: 'Enemy player damage', higherBetter: true },
-    { key: 'enemyStructDmg', label: 'Enemy structure/vehicle damage', higherBetter: true },
+    { key: 'enemyStructDmg', label: 'Enemy structure damage', higherBetter: true },
     { key: 'friendlyPlayerDmg', label: 'Friendly player damage', higherBetter: false },
-    { key: 'friendlyStructDmg', label: 'Friendly structure/vehicle damage', higherBetter: false },
-    { key: 'vehiclesCaptured', label: 'Vehicles captured by enemy', higherBetter: false },
+    { key: 'friendlyStructDmg', label: 'Friendly structure damage', higherBetter: false },
+    { key: 'vehiclesCaptured', label: 'Vehicles captured by enemy', higherBetter: false }
   ]},
   { label: 'Support', fields: [
     { key: 'healing', label: 'Friendly healing', higherBetter: true },
     { key: 'revivals', label: 'Friendly revivals', higherBetter: true },
     { key: 'repairing', label: 'Friendly repairing', higherBetter: true },
-    { key: 'construction', label: 'Friendly construction', higherBetter: true },
+    { key: 'construction', label: 'Friendly construction', higherBetter: true }
   ]},
   { label: 'Logistics', fields: [
     { key: 'materialsSubmitted', label: 'Materials submitted', higherBetter: true },
     { key: 'materialsGathered', label: 'Materials gathered', higherBetter: true },
-    { key: 'supplyDelivered', label: 'Supply value delivered', higherBetter: true },
+    { key: 'supplyDelivered', label: 'Supply value delivered', higherBetter: true }
   ]},
   { label: 'Vehicle Discipline', fields: [
     { key: 'selfDmgNeutral', label: 'Self damage (neutral)', higherBetter: false },
     { key: 'selfDmgColonial', label: 'Self damage (colonial)', higherBetter: false },
-    { key: 'selfDmgWarden', label: 'Self damage (warden)', higherBetter: false },
-  ]},
+    { key: 'selfDmgWarden', label: 'Self damage (warden)', higherBetter: false }
+  ]}
 ];
 
+// 3. CORE FUNCTIONS
 function fmt(n) { return (n || 0).toLocaleString(); }
+
 function getBest(key, higherBetter) {
   const vals = soldiers.map(s => s[key] || 0);
   return higherBetter ? Math.max(...vals) : Math.min(...vals);
 }
-function isBest(soldier, key, higherBetter) {
-  return soldier[key] === getBest(key, higherBetter);
-}
 
-// --- BUILDING VIEWS ---
 function buildCompare() {
   const el = document.getElementById('compareView');
   let html = '<table class="cg-table"><thead><tr><th>Metric</th>';
-  soldiers.forEach(s => { html += `<th class="right">${s.name}</th>`; });
+  soldiers.forEach(s => html += `<th class="right">${s.name}</th>`);
   html += '</tr></thead><tbody>';
+  
   categories.forEach(cat => {
     html += `<tr class="category-header"><td colspan="${soldiers.length + 1}">${cat.label}</td></tr>`;
     cat.fields.forEach(f => {
+      const bestVal = getBest(f.key, f.higherBetter);
       html += `<tr><td class="metric-name">${f.label}</td>`;
       soldiers.forEach(s => {
-        const best = isBest(s, f.key, f.higherBetter);
-        html += `<td class="val-cell ${best ? 'winner' : ''}">${fmt(s[f.key])}</td>`;
+        const isWinner = s[f.key] === bestVal;
+        html += `<td class="val-cell ${isWinner ? 'winner' : ''}">${fmt(s[f.key])}</td>`;
       });
       html += '</tr>';
     });
   });
-  html += '</tbody></table>';
-  el.innerHTML = html;
+  el.innerHTML = html + '</tbody></table>';
 }
 
 function buildDossiers() {
   const el = document.getElementById('dossierView');
   const allFields = categories.flatMap(c => c.fields);
-  const maxVals = {};
-  allFields.forEach(f => { maxVals[f.key] = Math.max(...soldiers.map(s => s[f.key] || 0)); });
-
   let html = '<div class="dossier-grid">';
+  
   soldiers.forEach((s, i) => {
-    html += `<div class="dossier-card">
-      <div class="card-header">
-        <div class="soldier-num">${(i+1).toString().padStart(2, '0')}</div>
-        <div class="soldier-meta">
-          <div class="soldier-name">${s.name}</div>
-          <div class="soldier-role">${s.role}</div>
-        </div>
-      </div>
-      <div class="medal-row">`;
-    s.medals.forEach(m => { html += `<span class="medal ${m.cls}">${m.label}</span>`; });
+    html += `<div class="dossier-card"><div class="card-header">
+      <div class="soldier-num">${(i+1).toString().padStart(2,'0')}</div>
+      <div class="soldier-meta"><div class="soldier-name">${s.name}</div><div class="soldier-role">${s.role}</div></div>
+    </div><div class="medal-row">`;
+    s.medals.forEach(m => html += `<span class="medal ${m.cls}">${m.label}</span>`);
     html += `</div><div class="stat-rows">`;
-    allFields.forEach(f => {
-      const best = isBest(s, f.key, f.higherBetter);
-      const pct = maxVals[f.key] > 0 ? Math.round((s[f.key] / maxVals[f.key]) * 100) : 0;
-      html += `<div class="stat-row">
-        <span class="stat-label">${f.label}</span>
-        <div class="stat-bar-wrap"><div class="stat-bar ${best ? 'best' : ''}" style="width:${pct}%"></div></div>
-        <span class="stat-val ${best ? 'best' : ''}">${fmt(s[f.key])}</span>
-      </div>`;
+    allFields.slice(0, 8).forEach(f => {
+      const maxVal = Math.max(...soldiers.map(sol => sol[f.key] || 1));
+      const pct = Math.min(100, Math.round(((s[f.key] || 0) / maxVal) * 100));
+      html += `<div class="stat-row"><span class="stat-label">${f.label}</span>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="width:${pct}%"></div></div>
+        <span class="stat-val">${fmt(s[f.key])}</span></div>`;
     });
     html += `</div></div>`;
   });
-  html += '</div>';
-  el.innerHTML = html;
+  el.innerHTML = html + '</div>';
 }
 
-// --- RADAR & AUTO-SCORE LOGIC ---
-function getAutoRadarData() {
+// 4. RADAR & AUTO-CALC
+let radarChart = null;
+function buildRadar() {
   const max = {
     dmg: Math.max(...soldiers.map(s => s.enemyPlayerDmg || 1)),
     struct: Math.max(...soldiers.map(s => s.enemyStructDmg || 1)),
     heal: Math.max(...soldiers.map(s => s.healing || 1)),
     const: Math.max(...soldiers.map(s => s.construction || 1)),
-    logi: Math.max(...soldiers.map(s => s.supplyDelivered || 1)),
-    disc: Math.max(...soldiers.map(s => (s.friendlyPlayerDmg + s.friendlyStructDmg) || 1))
+    logi: Math.max(...soldiers.map(s => s.supplyDelivered || 1))
   };
 
-  return soldiers.map(s => {
-    const combat = ((s.enemyPlayerDmg || 0) / max.dmg) * 100;
-    const structures = ((s.enemyStructDmg || 0) / max.struct) * 100;
-    const healing = ((s.healing || 0) / max.heal) * 100;
-    const construction = ((s.construction || 0) / max.const) * 100;
-    const logistics = ((s.supplyDelivered || 0) / max.logi) * 100;
-    const teamDmg = (s.friendlyPlayerDmg || 0) + (s.friendlyStructDmg || 0);
-    const discipline = Math.max(0, 100 - ((teamDmg / max.disc) * 100));
-    const overallScore = Math.round((combat + structures + healing + construction + logistics + discipline) / 6);
-
-    return { name: s.name, score: overallScore, data: [combat, structures, healing, construction, logistics, discipline] };
+  const calculated = soldiers.map((s, i) => {
+    const data = [
+      (s.enemyPlayerDmg/max.dmg)*100, (s.enemyStructDmg/max.struct)*100,
+      (s.healing/max.heal)*100, (s.construction/max.const)*100,
+      (s.supplyDelivered/max.logi)*100, 100
+    ];
+    return { name: s.name, score: Math.round(data.reduce((a,b)=>a+b,0)/6), data: data, color: radarColors[i % radarColors.length] };
   });
-}
 
-let radarChart = null;
-function buildRadar() {
-  const calculatedData = getAutoRadarData();
-  const el = document.getElementById('radarLegend');
+  // Legend
   let legendHtml = '';
-  soldiers.forEach((s, i) => {
-    legendHtml += `<div class="legend-item"><div class="legend-dot" style="background:${radarColors[i % radarColors.length]}"></div><span>${s.name}</span></div>`;
-  });
-  el.innerHTML = legendHtml;
+  calculated.forEach(c => legendHtml += `<div class="legend-item"><div class="legend-dot" style="background:${c.color}"></div><span>${c.name}</span></div>`);
+  document.getElementById('radarLegend').innerHTML = legendHtml;
 
-  const dimLabels = ['Combat', 'Structures', 'Healing', 'Construction', 'Logistics', 'Discipline'];
-  const datasets = calculatedData.map((r, i) => ({
-    label: r.name,
-    data: r.data,
-    borderColor: radarColors[i % radarColors.length],
-    backgroundColor: radarColors[i % radarColors.length] + '22',
-    pointBackgroundColor: radarColors[i % radarColors.length],
-    borderWidth: 1.5,
-    pointRadius: 3,
-  }));
-
+  // Chart
   if (radarChart) radarChart.destroy();
   radarChart = new Chart(document.getElementById('radar'), {
     type: 'radar',
-    data: { labels: dimLabels, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: '#2a2d30' }, angleLines: { color: '#2a2d30' }, pointLabels: { color: '#7a8090', font: { size: 11 } } } }
-    }
+    data: {
+      labels: ['Combat', 'Structures', 'Healing', 'Construction', 'Logistics', 'Discipline'],
+      datasets: calculated.map(c => ({ label: c.name, data: c.data, borderColor: c.color, backgroundColor: c.color+'22', borderWidth: 2, pointRadius: 2 }))
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: '#2a2d30' } } } }
   });
 
-  const sorted = [...calculatedData].sort((a, b) => b.score - a.score);
-  const maxScore = Math.max(...sorted.map(s => s.score));
-  const rankClasses = ['first','second','third'];
+  // Ranking Board
+  const sorted = [...calculated].sort((a,b) => b.score - a.score);
   let scoreHtml = '';
-  sorted.forEach((s, rank) => {
-    const color = radarColors[soldiers.findIndex(orig => orig.name === s.name) % radarColors.length];
-    const pct = Math.round((s.score / (maxScore || 1)) * 100);
-    scoreHtml += `<div class="score-row">
-      <div class="score-rank ${rankClasses[rank] || ''}">${rank + 1}${rank < 3 ? ['ST','ND','RD'][rank] : 'TH'}</div>
-      <div class="score-name" style="color:${color}">${s.name}</div>
-      <div class="score-bar-outer"><div class="score-bar-inner" style="width:${pct}%; background:${color}"></div></div>
-      <div class="score-pts">${s.score} pts</div>
-    </div>`;
+  sorted.forEach((s, r) => {
+    scoreHtml += `<div class="score-row"><div class="score-rank">${r+1}</div><div class="score-name" style="color:${s.color}">${s.name}</div><div class="score-pts">${s.score} pts</div></div>`;
   });
   document.getElementById('scoreRows').innerHTML = scoreHtml;
 }
 
 function setView(v) {
-  document.getElementById('compareView').classList.toggle('visible', v === 'compare');
-  document.getElementById('dossierView').classList.toggle('visible', v === 'dossier');
-  document.getElementById('radarView').classList.toggle('visible', v === 'radar');
-  document.querySelectorAll('.view-btn').forEach((b, i) => {
-    b.classList.toggle('active', ['compare','dossier','radar'][i] === v);
-  });
+  document.getElementById('compareView').style.display = v === 'compare' ? 'block' : 'none';
+  document.getElementById('dossierView').style.display = v === 'dossier' ? 'block' : 'none';
+  document.getElementById('radarView').style.display = v === 'radar' ? 'block' : 'none';
+  document.querySelectorAll('.view-btn').forEach((b, i) => b.classList.toggle('active', ['compare','dossier','radar'][i] === v));
   if (v === 'radar') buildRadar();
 }
 
-// Kickoff
+// Initial Load
 buildCompare();
 buildDossiers();
 </script>
