@@ -118,6 +118,32 @@ const soldiers = [
     supplyDelivered: 478829
   },
   {
+    name: "Frankie",
+    role: "CHIEF MEDICAL OFFICER",
+    medals: [{label: 'ANGEL OF MERCY', cls: 'medic'}, {label: 'FIELD MEDIC', cls: 'medic'}, {label: 'RESIDENT', cls: 'support'}],
+    enemyPlayerDmg: 11609, friendlyPlayerDmg: 2067,
+    enemyStructDmg: 75907, friendlyStructDmg: 2483,
+    construction: 6565, repairing: 2151,
+    healing: 82963, revivals: 507,
+    vehiclesCaptured: 2,
+    selfDmgNeutral: 0, selfDmgColonial: 0, selfDmgWarden: 0,
+    materialsSubmitted: 49270, materialsGathered: 2911,
+    supplyDelivered: 107471
+  },
+  {
+    name: "Wizee",
+    role: "REGIMENT OVERSEER",
+    medals: [{label: 'SUPPLY TITAN', cls: 'logi'}, {label: 'DEMOLISHER', cls: 'combat'}, {label: 'ARCHITECT', cls: 'support'}],
+    enemyPlayerDmg: 51512, friendlyPlayerDmg: 3973,
+    enemyStructDmg: 573465, friendlyStructDmg: 61615,
+    construction: 263803, repairing: 19234,
+    healing: 5288, revivals: 26,
+    vehiclesCaptured: 10,
+    selfDmgNeutral: 1500, selfDmgColonial: 0, selfDmgWarden: 0,
+    materialsSubmitted: 507785, materialsGathered: 162151,
+    supplyDelivered: 6943309
+  },
+  {
     name: "Providence", role: "ELITE COMBAT MEDIC",
     medals: [{label: 'LIFE SAVER', cls: 'medic'}, {label: 'RESCUE OPS', cls: 'medic'}, {label: 'SUPPLY CHAIN', cls: 'logi'}],
     enemyPlayerDmg: 22074, friendlyPlayerDmg: 9090,
@@ -272,7 +298,7 @@ function buildRadar() {
   });
 
   el.innerHTML = legendHtml;
-  const dimLabels = ['Combat','Structure Dmg','Healing','Construction','Logistics','Discipline'];
+  const dimLabels = ['Combat','Structure Dmg','Healing','Construction','Logistics','Veh. Discipline'];
 
   if (radarChart) radarChart.destroy();
   radarChart = new Chart(document.getElementById('radar'), {
