@@ -1,0 +1,333 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600&display=swap');
+  :root {
+    --bg: #0d0e0f; --surface: #141618; --border: #2a2d30;
+    --gold: #c8a84b; --red: #c0392b; --green-win: #2ecc71; --dim: #5a6070; --notsodim: #8a90a0;
+    --text: #dce0e8; --muted: #7a8090;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body, .wrap { background: black; color: var(--text); font-family: 'Barlow Condensed', sans-serif; }
+  .wrap { padding: 12px; }
+  .header { text-align: center; margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+  .header-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 4px; color: var(--gold); }
+  .header-sub { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--notsodim); letter-spacing: 2px; margin-top: 2px; }
+  .view-toggle { display: flex; gap: 6px; margin-bottom: 16px; }
+  .view-btn { font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 1px; padding: 5px 12px; background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.15s; border-radius: 2px; }
+  .view-btn.active { background: var(--border); color: var(--text); border-color: #444; }
+  .view-btn:hover:not(.active) { border-color: #444; color: var(--text); }
+  .comparison-grid { display: none; }
+  .comparison-grid.visible { display: block; }
+  .cg-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .cg-table th { font-family: 'Share Tech Mono', monospace; font-size: 14px; letter-spacing: 1px; color: var(--notsodim); padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); text-transform: uppercase; }
+  .cg-table th.right { text-align: right; }
+  .cg-table td { padding: 7px 8px; border-bottom: 1px solid #1c1f22; font-variant-numeric: tabular-nums; font-size: 13px; }
+  .cg-table tr:hover td { background: #161a1e; }
+  .metric-name { font-family: 'Barlow Condensed', sans-serif; color: var(--muted); font-size: 12px; letter-spacing: 0.5px; min-width: 160px; }
+  .val-cell { text-align: right; font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--text); min-width: 80px; }
+  .val-cell.winner { color: var(--green-win); font-weight: bold; position: relative; }
+  .val-cell.winner::after { content: '▲'; font-size: 8px; margin-left: 3px; vertical-align: middle; opacity: 0.8; }
+  .category-header td { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 2px; color: var(--gold); padding: 12px 8px 4px; background: transparent !important; border-bottom: 1px solid var(--border); }
+  .dossier-view { display: none; }
+  .dossier-view.visible { display: block; }
+  .dossier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .dossier-card { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; transition: border-color 0.2s; }
+  .dossier-card:hover { border-color: #444; }
+  .card-header { padding: 10px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .soldier-num { font-family: 'Bebas Neue', sans-serif; font-size: 34px; color: var(--gold); line-height: 1; min-width: 36px; }
+  .soldier-meta { flex: 1; }
+  .soldier-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1.5px; color: var(--text); }
+  .soldier-role { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--dim); letter-spacing: 1px; margin-top: 2px; }
+  .medal-row { display: flex; gap: 4px; flex-wrap: wrap; padding: 6px 12px; border-bottom: 1px solid var(--border); min-height: 30px; }
+  .medal { font-family: 'Share Tech Mono', monospace; font-size: 11px; padding: 2px 6px; border-radius: 1px; letter-spacing: 0.5px; }
+  .medal.combat { background: #3a1a1a; color: #e05050; border: 1px solid #5a2a2a; }
+  .medal.support { background: #182438; color: #50a0e0; border: 1px solid #2a4a6a; }
+  .medal.logi { background: #2a2a10; color: #c0c050; border: 1px solid #5a5a1a; }
+  .medal.medic { background: #083008; color: #50c070; border: 1px solid #2a5a3a; }
+  .medal.chaos { background: #2a1a3a; color: #c070e0; border: 1px solid #4a2a5a; }
+  .stat-rows { padding: 8px 0; }
+  .stat-row { display: flex; align-items: center; padding: 3px 12px; gap: 8px; }
+  .stat-label { flex: 1; font-size: 13px; color: var(--muted); letter-spacing: 0.3px; }
+  .stat-val { font-family: 'Share Tech Mono', monospace; font-size: 13px; color: var(--text); }
+  .stat-val.best { color: var(--green-win); }
+  .stat-bar-wrap { width: 50px; height: 3px; background: #222; border-radius: 1px; overflow: hidden; }
+  .stat-bar { height: 100%; background: var(--border); border-radius: 1px; }
+  .stat-bar.best { background: var(--green-win); }
+  .radar-view { display: none; }
+  .radar-view.visible { display: block; }
+  .radar-wrap { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; justify-content: center; }
+  canvas#radar { max-width: 500px; width: 100%; }
+  .radar-legend { display: flex; flex-direction: column; gap: 8px; min-width: 140px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .score-board { margin-top: 16px; border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+  .score-header { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 2px; color: var(--gold); padding: 8px 12px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .score-row { display: flex; align-items: center; padding: 7px 12px; gap: 10px; border-bottom: 1px solid #1c1f22; font-size: 13px; }
+  .score-rank { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--dim); min-width: 22px; }
+  .score-rank.first { color: var(--gold); }
+  .score-rank.second { color: #aaa; }
+  .score-rank.third { color: #cd7f32; }
+  .score-name { flex: 1; font-size: 13px; letter-spacing: 0.5px; }
+  .score-pts { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--green-win); }
+  .score-bar-outer { width: 80px; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+  .score-bar-inner { height: 100%; border-radius: 2px; }
+</style>
+
+<div class="wrap">
+  <div class="header">
+    <div class="header-title">Regiment Activity Report</div>
+    <div class="header-sub">FOXHOLE // CLASSIFIED // WARBOARD ANALYTICS</div>
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+    <div class="view-toggle">
+      <button class="view-btn active" onclick="setView('compare')">COMPARISON</button>
+      <button class="view-btn" onclick="setView('dossier')">DOSSIERS</button>
+      <button class="view-btn" onclick="setView('radar')">RADAR</button>
+    </div>
+  </div>
+
+  <div class="comparison-grid visible" id="compareView"></div>
+  <div class="dossier-view" id="dossierView"></div>
+  <div class="radar-view" id="radarView">
+    <div class="radar-wrap">
+      <canvas id="radar" height="300"></canvas>
+      <div>
+        <div class="radar-legend" id="radarLegend"></div>
+      </div>
+    </div>
+    <div class="score-board">
+      <div class="score-header">Overall Score Ranking</div>
+      <div id="scoreRows"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const soldiers = [
+  {
+    name: "Vivi", role: "LOGISTICS KING",
+    medals: [{label:'LOGI KING', cls:'logi'},{label:'HAULER', cls:'logi'},{label:'TROLL SHEPHERD', cls:'chaos'}],
+    enemyPlayerDmg: 19243, friendlyPlayerDmg: 2105,
+    enemyStructDmg: 28486, friendlyStructDmg: 3380,
+    construction: 8069, repairing: 1468,
+    healing: 191, revivals: 8,
+    vehiclesCaptured: 5,
+    selfDmgNeutral: 1500, selfDmgColonial: 1900, selfDmgWarden: 0,
+    materialsSubmitted: 694536, materialsGathered: 201075,
+    supplyDelivered: 671627
+  },
+  {
+    name: "BDT", role: "ARMED & DANGEROUS",
+    medals: [{label:'SHARPSHOOTER', cls:'combat'},{label:'VEHICULAR MENACE', cls:'chaos'}],
+    enemyPlayerDmg: 15220, friendlyPlayerDmg: 3348,
+    enemyStructDmg: 36846, friendlyStructDmg: 3633,
+    construction: 2270, repairing: 358,
+    healing: 7646, revivals: 27,
+    vehiclesCaptured: 1,
+    selfDmgNeutral: 0, selfDmgColonial: 1000, selfDmgWarden: 0,
+    materialsSubmitted: 138259, materialsGathered: 69192,
+    supplyDelivered: 88629
+  },
+  {
+    name: "Groxar", role: "COMBAT ENGINEER",
+    medals: [{label:'DEMOLISHER', cls:'combat'},{label:'ENGINEER', cls:'support'},{label:'REVIVER', cls:'medic'}],
+    enemyPlayerDmg: 20088, friendlyPlayerDmg: 1867,
+    enemyStructDmg: 106312, friendlyStructDmg: 2330,
+    construction: 19713, repairing: 7344,
+    healing: 22552, revivals: 133,
+    vehiclesCaptured: 7,
+    selfDmgNeutral: 0, selfDmgColonial: 292, selfDmgWarden: 0,
+    materialsSubmitted: 42557, materialsGathered: 4592,
+    supplyDelivered: 106777
+  },
+  {
+    name: "Vergil", role: "PRECISION STRIKER",
+    medals: [{label:'RISING ASSET', cls:'combat'},{label:'PRECISE', cls:'support'}],
+    enemyPlayerDmg: 15345, friendlyPlayerDmg: 654,
+    enemyStructDmg: 58008, friendlyStructDmg: 4429,
+    construction: 2801, repairing: 1070,
+    healing: 1586, revivals: 4,
+    vehiclesCaptured: 4,
+    selfDmgNeutral: 0, selfDmgColonial: 900, selfDmgWarden: 1641,
+    materialsSubmitted: 75012, materialsGathered: 3590,
+    supplyDelivered: 75443
+  }
+];
+
+const radarColors = ['#c8a84b','#e05050','#50c0e0','#a070e0'];
+
+const categories = [
+  { label: 'Combat', fields: [
+    { key: 'enemyPlayerDmg', label: 'Enemy player damage', higherBetter: true },
+    { key: 'enemyStructDmg', label: 'Enemy structure/vehicle damage', higherBetter: true },
+    { key: 'friendlyPlayerDmg', label: 'Friendly player damage', higherBetter: false },
+    { key: 'friendlyStructDmg', label: 'Friendly structure/vehicle damage', higherBetter: false },
+    { key: 'vehiclesCaptured', label: 'Vehicles captured by enemy', higherBetter: false },
+  ]},
+  { label: 'Support', fields: [
+    { key: 'healing', label: 'Friendly healing', higherBetter: true },
+    { key: 'revivals', label: 'Friendly revivals', higherBetter: true },
+    { key: 'repairing', label: 'Friendly repairing', higherBetter: true },
+    { key: 'construction', label: 'Friendly construction', higherBetter: true },
+  ]},
+  { label: 'Logistics', fields: [
+    { key: 'materialsSubmitted', label: 'Materials submitted', higherBetter: true },
+    { key: 'materialsGathered', label: 'Materials gathered', higherBetter: true },
+    { key: 'supplyDelivered', label: 'Supply value delivered', higherBetter: true },
+  ]},
+  { label: 'Vehicle Discipline', fields: [
+    { key: 'selfDmgNeutral', label: 'Self damage (neutral)', higherBetter: false },
+    { key: 'selfDmgColonial', label: 'Self damage (colonial)', higherBetter: false },
+    { key: 'selfDmgWarden', label: 'Self damage (warden)', higherBetter: false },
+  ]},
+];
+
+function fmt(n) { return n.toLocaleString(); }
+function getBest(key, higherBetter) {
+  const vals = soldiers.map(s => s[key]);
+  return higherBetter ? Math.max(...vals) : Math.min(...vals);
+}
+function isBest(soldier, key, higherBetter) {
+  return soldier[key] === getBest(key, higherBetter);
+}
+
+function buildCompare() {
+  const el = document.getElementById('compareView');
+  let html = '<table class="cg-table"><thead><tr><th>Metric</th>';
+  soldiers.forEach(s => { html += `<th class="right">${s.name}</th>`; });
+  html += '</tr></thead><tbody>';
+  categories.forEach(cat => {
+    html += `<tr class="category-header"><td colspan="${soldiers.length + 1}">${cat.label}</td></tr>`;
+    cat.fields.forEach(f => {
+      html += `<tr><td class="metric-name">${f.label}</td>`;
+      soldiers.forEach(s => {
+        const best = isBest(s, f.key, f.higherBetter);
+        html += `<td class="val-cell ${best ? 'winner' : ''}">${fmt(s[f.key])}</td>`;
+      });
+      html += '</tr>';
+    });
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function buildDossiers() {
+  const el = document.getElementById('dossierView');
+  const allFields = categories.flatMap(c => c.fields);
+  const maxVals = {};
+  allFields.forEach(f => { maxVals[f.key] = Math.max(...soldiers.map(s => s[f.key])); });
+
+  let html = '<div class="dossier-grid">';
+  soldiers.forEach((s, i) => {
+    html += `<div class="dossier-card">
+      <div class="card-header">
+        <div class="soldier-num">0${i+1}</div>
+        <div class="soldier-meta">
+          <div class="soldier-name">${s.name}</div>
+          <div class="soldier-role">${s.role}</div>
+        </div>
+      </div>
+      <div class="medal-row">`;
+    s.medals.forEach(m => { html += `<span class="medal ${m.cls}">${m.label}</span>`; });
+    html += `</div><div class="stat-rows">`;
+    allFields.forEach(f => {
+      const best = isBest(s, f.key, f.higherBetter);
+      const pct = maxVals[f.key] > 0 ? Math.round((s[f.key] / maxVals[f.key]) * 100) : 0;
+      html += `<div class="stat-row">
+        <span class="stat-label">${f.label}</span>
+        <div class="stat-bar-wrap"><div class="stat-bar ${best ? 'best' : ''}" style="width:${pct}%"></div></div>
+        <span class="stat-val ${best ? 'best' : ''}">${fmt(s[f.key])}</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+const hardcodedScores = [
+  { name: "Vivi",   score: 97, color: radarColors[0] },
+  { name: "BDT",    score: 94, color: radarColors[1] },
+  { name: "Groxar", score: 99, color: radarColors[2] },
+  { name: "Vergil", score: 91, color: radarColors[3] },
+];
+
+const radarData = [
+  { name: "Vivi",   data: [92, 42, 18, 60, 100, 70] },
+  { name: "BDT",    data: [67, 55, 70, 29, 30, 58] },
+  { name: "Groxar", data: [100, 100, 100, 100, 19, 34] },
+  { name: "Vergil", data: [69, 77, 20, 35, 26, 100] },
+];
+
+let radarChart = null;
+function buildRadar() {
+  const el = document.getElementById('radarLegend');
+  let legendHtml = '';
+  soldiers.forEach((s, i) => {
+    legendHtml += `<div class="legend-item"><div class="legend-dot" style="background:${radarColors[i]}"></div><span>${s.name}</span></div>`;
+  });
+  el.innerHTML = legendHtml;
+
+  const dimLabels = ['Enemy kills','Structure damage','Healing','Construction','Logistics','Discipline'];
+
+  const datasets = radarData.map((r, i) => ({
+    label: r.name,
+    data: r.data,
+    borderColor: radarColors[i],
+    backgroundColor: radarColors[i] + '22',
+    pointBackgroundColor: radarColors[i],
+    borderWidth: 1.5,
+    pointRadius: 3,
+  }));
+
+  if (radarChart) radarChart.destroy();
+  radarChart = new Chart(document.getElementById('radar'), {
+    type: 'radar',
+    data: { labels: dimLabels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { display: false },
+          grid: { color: '#2a2d30' },
+          angleLines: { color: '#2a2d30' },
+          pointLabels: { color: '#7a8090', font: { size: 11 } },
+        }
+      }
+    }
+  });
+
+  const sorted = [...hardcodedScores].sort((a, b) => b.score - a.score);
+  const maxScore = sorted[0].score;
+  const rankLabels = ['1ST','2ND','3RD','4TH'];
+  const rankClasses = ['first','second','third',''];
+  let scoreHtml = '';
+  sorted.forEach((s, rank) => {
+    const pct = Math.round((s.score / maxScore) * 100);
+    scoreHtml += `<div class="score-row">
+      <div class="score-rank ${rankClasses[rank]}">${rankLabels[rank]}</div>
+      <div class="score-name" style="color:${s.color}">${s.name}</div>
+      <div class="score-bar-outer"><div class="score-bar-inner" style="width:${pct}%; background:${s.color}"></div></div>
+      <div class="score-pts">${s.score} pts</div>
+    </div>`;
+  });
+  document.getElementById('scoreRows').innerHTML = scoreHtml;
+}
+
+function setView(v) {
+  document.getElementById('compareView').classList.toggle('visible', v === 'compare');
+  document.getElementById('dossierView').classList.toggle('visible', v === 'dossier');
+  document.getElementById('radarView').classList.toggle('visible', v === 'radar');
+  document.querySelectorAll('.view-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['compare','dossier','radar'][i] === v);
+  });
+  if (v === 'radar') buildRadar();
+}
+
+buildCompare();
+buildDossiers();
+</script>
