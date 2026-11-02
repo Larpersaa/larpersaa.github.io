@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PZ Team Builder</title>
+<style>
+:root{--bg:#f4f1ea;--sf:#fff;--tx:#1d1d1b;--mu:#6b685f;--bd:#d9d4c7;--ac:#2f6b3a;--acx:#fff;--good:#2f6b3a;--mid:#b7791f;--bad:#b3261e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171814;--sf:#22241e;--tx:#ecebe4;--mu:#9b9888;--bd:#3a3c33;--ac:#7bc58a;--acx:#10200f;--good:#7bc58a;--mid:#e0b04f;--bad:#ff8a80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171814;--sf:#22241e;--tx:#ecebe4;--mu:#9b9888;--bd:#3a3c33;--ac:#7bc58a;--acx:#10200f;--good:#7bc58a;--mid:#e0b04f;--bad:#ff8a80;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header,main{max-width:1100px;margin:auto;padding:0 20px}
+header{padding-top:18px}
+h1{margin:0;font-size:22px}
+header p{margin:4px 0 12px;color:var(--mu);font-size:13px}
+main{display:grid;gap:16px;grid-template-columns:1fr 380px;padding-bottom:40px}
+@media(max-width:880px){main{grid-template-columns:1fr}}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:14px}
+h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin:0 0 10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select,input{background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px;font:inherit;min-width:0}
+button{font:inherit;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:8px;padding:8px 12px;cursor:pointer}
+button.p{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weight:600}
+button:disabled{opacity:.4;cursor:not-allowed}
+.pl{border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:10px;background:var(--bg)}
+.pl .row>*{flex:1 1 130px}
+.pl .row>button{flex:0 0 auto}
+.hint{font-size:12px;color:var(--mu);margin-top:6px}
+.ar{display:grid;grid-template-columns:96px 1fr 58px;gap:8px;align-items:center;margin:7px 0;font-size:13px}
+.bar{height:10px;border-radius:6px;background:var(--bd);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:6px}
+.tag{font-size:12px;font-weight:600;text-align:right}
+.score{font-size:40px;font-weight:700;line-height:1}
+.mu{color:var(--mu);font-size:13px}
+.fill{padding:8px 10px;border:1px dashed var(--bd);border-radius:8px;margin-top:8px;font-size:13px}
+.side{position:sticky;top:12px;align-self:start}
+</style>
+</head>
+<body>
+<header>
+<h1>🧟 Team Builder</h1>
+<p>Assign roles to up to 6 survivors and see which skills your group is missing. Role skill weights are a simple model, tweak the plan to fit your server.</p>
+</header>
+<main>
+<section class="card">
+  <div class="row" style="margin-bottom:12px">
+    <button class="p" id="add">+ Add survivor</button>
+    <button data-pre="4">Starter 4</button>
+    <button data-pre="6">Full 6</button>
+    <button id="clr">Clear</button>
+    <span class="mu" id="cnt"></span>
+  </div>
+  <div id="players"></div>
+</section>
+<aside class="side card">
+  <h2>Team readiness</h2>
+  <div class="score" id="score">0%</div>
+  <div class="mu" id="verdict"></div>
+  <h2 style="margin-top:16px">Skill coverage</h2>
+  <div id="areas"></div>
+  <div id="fill"></div>
+</aside>
+</main>
+<script>
+const R={
+ Tank:{c:{Combat:3,Endurance:3},jobs:["Fire Officer","Security Guard","Police Officer","Lumberjack"],tr:"Athletic, Strong, Thick Skinned, Brave"},
+ Mechanic:{c:{Mechanics:3,"Metal & Power":3,Carpentry:1},jobs:["Mechanic","Engineer","Metalworker","Welder","Blacksmith","Carpenter","Construction Worker"],tr:"Handy, Dextrous, Organized, Fast Learner"},
+ Medic:{c:{Medical:3,Foraging:1,Cooking:1},jobs:["Doctor","Nurse","Veterinarian"],tr:"Fast Healer, Herbalist, Resilient, Desensitized"},
+ Farmer:{c:{Farming:3,Cooking:2,Foraging:1},jobs:["Farmer","Rancher","Chef","Fisherman"],tr:"Outdoorsman, Gardener, Cook, Light Eater"},
+ Scavenger:{c:{Looting:3,Foraging:2,Endurance:1},jobs:["Burglar","Park Ranger","Police Officer"],tr:"Inconspicuous, Graceful, Keen Hearing, Gymnast"}
+};
+const AREAS=["Combat","Endurance","Mechanics","Metal & Power","Carpentry","Medical","Farming","Cooking","Foraging","Looting"];
+const ALLJ=[...new Set(Object.values(R).flatMap(r=>r.jobs).concat(["Unemployed"]))].sort();
+let T=[];
+const $=id=>document.getElementById(id);
+const mk=(r,r2="",job="")=>({name:"Survivor "+(T.length+1),r1:r,r2,job});
+function add(r){if(T.length>=6)return;T.push(mk(r||Object.keys(R)[T.length%5]));render()}
+function opts(list,sel,blank){return(blank?`<option value="">${blank}</option>`:"")+list.map(x=>`<option${x===sel?" selected":""}>${x}</option>`).join("")}
+function render(){
+  $("players").innerHTML="";
+  T.forEach((p,i)=>{
+    const d=document.createElement("div");d.className="pl";
+    const sug=R[p.r1].jobs,oth=ALLJ.filter(j=>!sug.includes(j));
+    d.innerHTML=`<div class="row"><input value="${p.name.replace(/"/g,"&quot;")}" aria-label="Name"><select data-k="r1">${opts(Object.keys(R),p.r1)}</select><select data-k="r2">${opts(Object.keys(R).filter(r=>r!==p.r1),p.r2,"No backup role")}</select><select data-k="job"><option value="">Job: any</option><optgroup label="Suggested">${opts(sug,p.job)}</optgroup><optgroup label="Other">${opts(oth,p.job)}</optgroup></select><button aria-label="Remove">✕</button></div><div class="hint">Trait ideas: ${R[p.r1].tr}</div>`;
+    d.querySelector("input").oninput=e=>{p.name=e.target.value;analyze()};
+    d.querySelectorAll("select").forEach(s=>s.onchange=()=>{p[s.dataset.k]=s.value;if(s.dataset.k==="r1"){if(p.r2===p.r1)p.r2="";p.job=""}render()});
+    d.querySelector("button").onclick=()=>{T.splice(i,1);render()};
+    $("players").append(d);
+  });
+  $("add").disabled=T.length>=6;$("cnt").textContent=T.length+" / 6 survivors";
+  analyze();
+}
+function analyze(){
+  const tot=Object.fromEntries(AREAS.map(a=>[a,0]));
+  T.forEach(p=>{for(const[a,w]of Object.entries(R[p.r1].c))tot[a]+=w;if(p.r2)for(const[a,w]of Object.entries(R[p.r2].c))tot[a]+=w/2});
+  const st=v=>v>=3?["Covered","var(--good)"]:v>0?["Thin","var(--mid)"]:["Gap","var(--bad)"];
+  $("areas").innerHTML=AREAS.map(a=>{const[l,c]=st(tot[a]);return`<div class="ar"><span>${a}</span><div class="bar"><i style="width:${Math.min(tot[a]/6,1)*100}%;background:${c}"></i></div><span class="tag" style="color:${c}">${l}</span></div>`}).join("");
+  const sc=T.length?Math.round(AREAS.reduce((s,a)=>s+Math.min(tot[a],3)/3,0)/AREAS.length*100):0;
+  $("score").textContent=sc+"%";
+  const gaps=AREAS.filter(a=>tot[a]===0),thin=AREAS.filter(a=>tot[a]>0&&tot[a]<3);
+  $("verdict").textContent=!T.length?"Add survivors to begin.":gaps.length?`${gaps.length} gap${gaps.length>1?"s":""}: ${gaps.join(", ")}`:thin.length?"No gaps, but some areas are thin.":"Solid coverage across the board.";
+  const need=[...gaps,...thin],by={};
+  need.forEach(a=>{const r=Object.keys(R).sort((x,y)=>(R[y].c[a]||0)-(R[x].c[a]||0))[0];(by[r]=by[r]||[]).push(a)});
+  const full=T.length>=6;
+  $("fill").innerHTML=T.length&&need.length?`<h2 style="margin-top:14px">How to fill it</h2>`+Object.entries(by).map(([r,a])=>`<div class="fill"><b>${r}</b> covers ${a.join(", ")}<div class="hint">${full?"Team is full: set a backup role on an existing survivor.":"Add a "+r+" or give someone it as a backup role."}</div></div>`).join(""):"";
+}
+$("add").onclick=()=>add();
+$("clr").onclick=()=>{T=[];render()};
+document.querySelectorAll("[data-pre]").forEach(b=>b.onclick=()=>{
+  const r=["Tank","Mechanic","Medic","Farmer","Scavenger"];T=[];
+  r.slice(0,4).forEach(x=>T.push(mk(x)));
+  if(b.dataset.pre==="6"){T.push(mk("Scavenger"));const t=mk("Tank","Mechanic");T.push(t)}
+  render()});
+document.querySelector("[data-pre='4']").click();
+</script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Build 42 Trait Planner</title>
+<style>
+:root{--bg:#f4f1ea;--sf:#fff;--tx:#1d1d1b;--mu:#6b685f;--bd:#d9d4c7;--ac:#2f6b3a;--acx:#fff;--pos:#2f6b3a;--neg:#a63d2f;--warn:#b3261e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171814;--sf:#22241e;--tx:#ecebe4;--mu:#9b9888;--bd:#3a3c33;--ac:#7bc58a;--acx:#10200f;--pos:#7bc58a;--neg:#e8806f;--warn:#ff8a80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171814;--sf:#22241e;--tx:#ecebe4;--mu:#9b9888;--bd:#3a3c33;--ac:#7bc58a;--acx:#10200f;--pos:#7bc58a;--neg:#e8806f;--warn:#ff8a80;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:18px 20px 6px;max-width:1200px;margin:auto}
+h1{margin:0;font-size:22px}
+header p{margin:4px 0 0;color:var(--mu);font-size:13px}
+main{max-width:1200px;margin:auto;padding:12px 20px 40px;display:grid;gap:16px;grid-template-columns:1fr 320px}
+@media(max-width:860px){main{grid-template-columns:1fr}}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:14px}
+h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin:0 0 10px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+select,input[type=number]{background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px;font:inherit}
+select{min-width:180px}
+input[type=number]{width:64px}
+button{font:inherit;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:8px;padding:8px 12px;cursor:pointer}
+button.p{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weight:600}
+.seg button{border-radius:0;margin:0 -1px 0 0}.seg button.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+.seg button:first-child{border-radius:8px 0 0 8px}.seg button:last-child{border-radius:0 8px 8px 0}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{display:flex;gap:6px;align-items:center;border:1px solid var(--bd);border-radius:999px;padding:5px 11px;background:var(--bg);cursor:pointer;user-select:none;font-size:13px}
+.chip b{font-size:12px}.chip.pos b{color:var(--pos)}.chip.neg b{color:var(--neg)}
+.chip.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}.chip.on b{color:inherit}
+.chip.neg{color:var(--neg);border-color:var(--neg)}
+.chip.neg.on{background:var(--neg);color:var(--acx);border-color:var(--neg)}
+.chip.free{border-style:dashed;cursor:default}
+.chip.off{opacity:.35;cursor:not-allowed}
+.side{position:sticky;top:12px;align-self:start}
+.pts{font-size:42px;font-weight:700;line-height:1}.pts.bad{color:var(--warn)}
+.mu{color:var(--mu);font-size:13px}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.job{border:1px solid var(--bd);border-radius:10px;padding:10px;background:var(--bg)}
+.job h3{margin:0 0 2px;font-size:15px;display:flex;justify-content:space-between}
+.job .t{font-size:12px;margin:6px 0;color:var(--mu)}
+.wide{grid-column:1/-1;overflow-x:auto}
+label{font-size:13px;color:var(--mu)}
+</style>
+</head>
+<body>
+<header>
+<h1>🧟 Build 42 Trait Planner</h1>
+<p>Pick a job, then pick traits by hand or let the optimizer fill your point budget. Costs are approximate for 42.2x: edit the job cost or base pool if your game differs.</p>
+</header>
+<main>
+<div style="display:grid;gap:16px">
+  <section class="card">
+    <h2>Setup</h2>
+    <div class="row">
+      <select id="job"></select>
+      <label>Job cost <input type="number" id="jc" min="0" max="20"></label>
+      <label>Base pool <input type="number" id="bp" min="0" max="30" value="8"></label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span class="mu">Playstyle</span>
+      <div class="seg" id="presets"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label>Penalty tolerance <input type="range" id="risk" min="1" max="8" value="4"> <span id="rv">4</span></label>
+      <span class="mu">(highest-harm negative the optimizer may take)</span>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="p" id="opt">⚡ Optimize this job</button>
+      <button id="clr">Clear</button>
+    </div>
+  </section>
+  <section class="card"><h2>Positive traits <span class="mu">(spend points)</span></h2><div class="chips" id="pos"></div></section>
+  <section class="card"><h2>Negative traits <span class="mu">(refund points)</span></h2><div class="chips" id="neg"></div></section>
+</div>
+<aside class="side card">
+  <h2>Points left</h2>
+  <div class="pts" id="pts">0</div>
+  <div class="mu" id="brk"></div>
+  <h2 style="margin-top:16px">Build</h2>
+  <div class="chips" id="sel"></div>
+  <p class="mu" id="score"></p>
+  <button id="copy">Copy build</button>
+</aside>
+<section class="card wide">
+  <div class="row" style="justify-content:space-between"><h2 style="margin:0">Optimal build for every job</h2><button id="all">Recalculate all</button></div>
+  <div class="grid" id="jobs" style="margin-top:10px"></div>
+</section>
+</main>
+<script>
+const P=`Athletic|8|8|move combat|fit
+Fit|6|6|move|fit
+Strong|8|7|combat|str
+Fast Learner|6|8|learn|lrn
+Fast Reader|2|3|learn|rd
+Resilient|4|6|surv|ill
+Thick Skinned|8|6|surv|skin
+Outdoorsman|2|6|surv|
+Lucky|4|3||luck
+Inconspicuous|4|6|stealth|cons
+Graceful|4|5|stealth|gra
+Light Eater|2|3|surv|eat
+Low Thirst|2|3|surv|thr
+Iron Gut|6|4|surv|
+Keen Hearing|6|5|stealth|hear
+Eagle Eyed|4|5|stealth|eye
+Gymnast|5|5|stealth move|
+Dextrous|2|3|craft|
+Organized|6|5|surv|org
+Cat’s Eyes|6|5|stealth|
+Herbalist|4|3|med surv|
+Fast Healer|6|6|med surv|
+Wakeful|4|4|surv|slp
+Brave|4|4|combat|cow
+Desensitized|4|6|surv|fear
+Handy|8|6|craft|
+Cook|2|3|craft surv|
+Gardener|2|3|surv|
+Angler|4|3|surv|`;
+const N=`Overweight|4|3||wt
+Obese|10|8||wt
+Underweight|4|4||wt
+Very Underweight|6|6||wt
+Out of Shape|4|4||fit
+Unfit|10|8||fit
+Weak|4|4||str
+Feeble|8|7||str
+Slow Learner|4|5||lrn
+Slow Reader|2|1||rd
+Short Sighted|2|2||eye
+Hard of Hearing|2|3||hear
+Deaf|8|7||hear
+Smoker|2|3||
+Thin Skinned|4|4||skin
+Clumsy|2|3||gra
+Cowardly|2|3||cow fear
+Agoraphobic|2|3||fear
+Claustrophobic|2|3||fear
+Hemophobic|4|4||fear
+Prone to Illness|4|4||ill
+Weak Stomach|3|2||
+High Thirst|2|2||thr
+Heavy Eater|2|2||eat
+Disorganized|4|4||org
+Unlucky|4|4||luck
+Needs More Sleep|4|3||slp
+Conspicuous|4|4||cons
+Asthmatic|5|4||
+Insomniac|4|4||slp`;
+const J=`Unemployed|0||
+Fire Officer|4|combat move|
+Police Officer|4|combat|
+Park Ranger|4|surv|Outdoorsman
+Construction Worker|4|craft|
+Security Guard|4|combat stealth|
+Carpenter|4|craft|
+Burglar|2|stealth|
+Chef|2|craft surv|
+Farmer|2|surv|
+Fisherman|2|surv|
+Doctor|4|med|
+Nurse|2|med|
+Veterinarian|5|med|
+Lumberjack|4|combat craft|
+Mechanic|3|craft|
+Engineer|4|craft|
+Metalworker|4|craft|
+Rancher|4|surv|
+Tailor|3|craft|
+Blacksmith|4|craft combat|
+Welder|4|craft|`;
+const parse=(s,pos)=>s.split("\n").map(l=>{const a=l.split("|");return{n:a[0],c:+a[1],v:+a[2],tags:a[3].split(" ").filter(Boolean),g:(a[4]||"").split(" ").filter(Boolean),pos}});
+const POS=parse(P,1),NEG=parse(N,0),ALL=[...POS,...NEG],BY=Object.fromEntries(ALL.map(t=>[t.n,t]));
+const JOBS=J.split("\n").map(l=>{const a=l.split("|");return{n:a[0],c:+a[1],tags:a[2].split(" ").filter(Boolean),free:a[3]?a[3].split(","):[]}});
+const PRE={Balanced:{},Combat:{combat:3,move:1},Builder:{craft:3,surv:1},Stealth:{stealth:3,move:1},Medic:{med:3,surv:1}};
+const $=id=>document.getElementById(id);
+const S={job:JOBS[0],cost:0,pre:"Balanced",set:new Set()};
+const conflict=(n,set)=>{const t=BY[n];return [...set].some(m=>m!==n&&BY[m].g.some(g=>t.g.includes(g)))};
+const val=(t,job,pre)=>t.v+t.tags.reduce((s,x)=>s+(PRE[pre][x]||0)+(job.tags.includes(x)?1.5:0),0)+(t.tags.includes("learn")?1:0);
+const pool=(set,job,cost,base)=>base-cost+[...set].reduce((s,n)=>s+(job.free.includes(n)?0:BY[n].pos?-BY[n].c:BY[n].c),0);
+function optimize(job,cost,base,pre,risk){
+  const set=new Set(job.free);let pl=base-cost;
+  for(let i=0;i<80;i++){
+    const pc=POS.filter(t=>!set.has(t.n)&&!conflict(t.n,set)).map(t=>({t,v:val(t,job,pre)})).filter(x=>x.v>=4);
+    const fit=pc.filter(x=>x.t.c<=pl).sort((a,b)=>b.v/b.t.c-a.v/a.t.c)[0];
+    if(fit){set.add(fit.t.n);pl-=fit.t.c;continue}
+    let best=null,bs=0;
+    for(const n of NEG){
+      if(set.has(n.n)||n.v>risk||conflict(n.n,set))continue;
+      const gain=pc.filter(x=>x.t.c<=pl+n.c).sort((a,b)=>b.v/b.t.c-a.v/a.t.c)[0];
+      if(!gain)continue;
+      const s=(gain.v-n.v*1.2)*(n.c/n.v);
+      if(gain.v>n.v*1.2&&s>bs){bs=s;best=n}
+    }
+    if(!best)break;set.add(best.n);pl+=best.c;
+  }
+  return set;
+}
+const score=(set,job,pre)=>Math.round([...set].reduce((s,n)=>{const t=BY[n];return job.free.includes(n)?s:s+(t.pos?val(t,job,pre):-t.v)},0));
+function chip(t,set,job){
+  const d=document.createElement("div"),free=job.free.includes(t.n),on=set.has(t.n);
+  d.className="chip "+(t.pos?"pos":"neg")+(on?" on":"")+(free?" free":"");
+  if(!on&&conflict(t.n,set))d.classList.add("off");
+  d.innerHTML=t.n+" <b>"+(t.pos?"−":"+")+t.c+"</b>";
+  if(free)d.title="Free with this job";
+  d.onclick=()=>{if(free||d.classList.contains("off"))return;on?set.delete(t.n):set.add(t.n);render()};
+  return d;
+}
+function render(){
+  const base=+$("bp").value||0,left=pool(S.set,S.job,S.cost,base);
+  $("pos").replaceChildren(...POS.map(t=>chip(t,S.set,S.job)));
+  $("neg").replaceChildren(...NEG.map(t=>chip(t,S.set,S.job)));
+  const p=$("pts");p.textContent=left;p.className="pts"+(left<0?" bad":"");
+  $("brk").textContent=`${base} base − ${S.cost} job ${left<0?"· over budget":""}`;
+  const sel=[...S.set].map(n=>{const t=BY[n];return`<span class="chip ${t.pos?"pos":"neg"} on" style="cursor:default">${n}</span>`}).join("");
+  $("sel").innerHTML=sel||'<span class="mu">Nothing selected</span>';
+  $("score").textContent=`Build score: ${score(S.set,S.job,S.pre)} (${S.pre} · ${S.job.n})`;
+  document.querySelectorAll("#presets button").forEach(b=>b.classList.toggle("on",b.dataset.p===S.pre));
+}
+function allJobs(){
+  const base=+$("bp").value||0,risk=+$("risk").value;
+  $("jobs").replaceChildren(...JOBS.map(j=>{
+    const set=optimize(j,j.c,base,S.pre,risk),left=pool(set,j,j.c,base);
+    const d=document.createElement("div");d.className="job";
+    d.innerHTML=`<h3>${j.n}<span class="mu">cost ${j.c}</span></h3><div class="mu">score ${score(set,j,S.pre)} · ${left} left</div><div class="t">${[...set].map(n=>(BY[n].pos?"+ ":"− ")+n).join(", ")}</div>`;
+    const b=document.createElement("button");b.textContent="Load";b.onclick=()=>{$("job").value=j.n;S.job=j;S.cost=j.c;$("jc").value=j.c;S.set=set;render();scrollTo({top:0,behavior:"smooth"})};
+    d.append(b);return d;
+  }));
+}
+$("job").innerHTML=JOBS.map(j=>`<option>${j.n}</option>`).join("");
+$("presets").innerHTML=Object.keys(PRE).map(k=>`<button data-p="${k}">${k}</button>`).join("");
+$("presets").onclick=e=>{if(e.target.dataset.p){S.pre=e.target.dataset.p;render();allJobs()}};
+$("job").onchange=()=>{S.job=JOBS.find(j=>j.n===$("job").value);S.cost=S.job.c;$("jc").value=S.cost;S.set=new Set(S.job.free);render()};
+$("jc").oninput=()=>{S.cost=+$("jc").value||0;render()};
+$("bp").oninput=()=>{render();allJobs()};
+$("risk").oninput=()=>{$("rv").textContent=$("risk").value};
+$("opt").onclick=()=>{S.set=optimize(S.job,S.cost,+$("bp").value||0,S.pre,+$("risk").value);render()};
+$("clr").onclick=()=>{S.set=new Set(S.job.free);render()};
+$("all").onclick=allJobs;
+$("copy").onclick=()=>{const t=`${S.job.n} | ${[...S.set].join(", ")} | ${pool(S.set,S.job,S.cost,+$("bp").value||0)} pts left`;try{navigator.clipboard.writeText(t)}catch(e){}$("copy").textContent="Copied ✓";setTimeout(()=>$("copy").textContent="Copy build",1200)};
+$("jc").value=0;$("job").onchange();allJobs();
+</script>
+</body>
+</html>
